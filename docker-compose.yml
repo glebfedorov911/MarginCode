@@ -1,0 +1,47 @@
+services:
+  backend:
+    build: .
+    container_name: api_margin_code
+    ports:
+      - "8005:8005"
+    depends_on:
+      - db
+    networks:
+      - app_network
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_ECHO=${DATABASE_ECHO}
+      - SECRET_KEY=${SECRET_KEY}
+      - TOKEN_ALGORITHM=${TOKEN_ALGORITHM}
+      - TOKEN_EXPIRES=${TOKEN_EXPIRES}
+      - TOKEN_TYPE=${TOKEN_TYPE}
+      - PASSWORD_TO_CREATE_USER=${PASSWORD_TO_CREATE_USER}
+    volumes:
+      - .:/app
+
+  db:
+    image: postgres:latest
+    container_name: postgres_margin_code
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  pg_data:
