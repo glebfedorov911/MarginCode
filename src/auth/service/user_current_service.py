@@ -29,7 +29,10 @@ class UserCurrentService:
         )
 
     async def current_user(self, session: AsyncSession) -> User:
-        token = self.request.headers.get(self.header_token).split(" ")[1]
+        token = self.request.headers.get(self.header_token)
+        if not token:
+            raise self.exc
+        token = token.split(" ")[1]
         payload = self.token_handler.decode(token)
         if (sub := payload.get("sub", None)) is None:
             raise self.exc

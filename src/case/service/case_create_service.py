@@ -15,8 +15,5 @@ class CaseCreateService(CaseServiceMixin):
         super().__init__(repo)
 
     async def create_case(self, session: AsyncSession, **kwargs) -> Case:
-        images = kwargs.pop("images")
-        saved_paths = self._save_images(images)
-        kwargs['images'] = saved_paths
-
+        kwargs = self._work_with_images(**kwargs)
         return await self.repo.add(session, kwargs)

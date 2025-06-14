@@ -15,8 +15,5 @@ class CaseUpdateService(CaseServiceMixin):
         super().__init__(repo)
 
     async def update_case(self, session: AsyncSession, id: str, **kwargs) -> Case:
-        images = kwargs.pop("images")
-        saved_paths = self._save_images(images)
-        kwargs['images'] = saved_paths if saved_paths else None
-
+        kwargs = self._work_with_images(**kwargs)
         return await self.repo.update(session, id, kwargs)

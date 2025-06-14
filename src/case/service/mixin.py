@@ -18,6 +18,12 @@ class CaseServiceMixin:
         self.repo = repo
         self.image_path_dir = settings.file_settings.UPLOAD_IMAGE_DIR
 
+    def _work_with_images(self, **kwargs) -> dict:
+        images = kwargs.pop("images")
+        saved_paths = self._save_images(images)
+        kwargs['images'] = saved_paths if saved_paths else None
+        return kwargs
+
     def _save_images(self, images: List[UploadFile]):
         saved_paths = []
         for image in images:

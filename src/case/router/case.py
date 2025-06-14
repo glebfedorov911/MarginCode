@@ -16,6 +16,7 @@ from src.case.service.case_create_service import CaseCreateService
 from src.case.service.case_update_service import CaseUpdateService
 from src.case.repository.case_repository import CaseRepository
 from src.case.dependency.repository_depend import get_case_repository
+from src.auth.dependency.service_depend import get_user_current_service
 
 
 router = APIRouter(
@@ -23,28 +24,39 @@ router = APIRouter(
     tags=[settings.router_settings.case_tag]
 )
 
+async def check_rules_user(current_user, session: AsyncSession):
+    current_user = await current_user.current_user(session)
+    if not current_user.is_staff:
+        raise HTTPException(
+            status_code=403,
+            detail="You are not authorized to perform this action",
+        )
+
 @router.post("/")
 async def create_case(
     case: str = Form(...),
-    file: List[UploadFile] = File(...),
+    file: List[UploadFile] | None = File(None),
     session: AsyncSession = Depends(database_helper.session_depends),
     service: CaseCreateService = Depends(get_case_create_service),
+    current_user = Depends(get_user_current_service),
 ) -> CaseRead:
     """Case - string format: {"title":"string","description":"string","price":float}"""
     try:
+        await check_rules_user(current_user, session)
+
         case = CaseCreate.model_validate_json(case)
         case_collection = case.model_dump()
-        case_collection["images"] = file
+        case_collection["images"] = file if file else []
         return await service.create_case(session, **case_collection)
     except HTTPException as e:
         raise e
     except pydantic_core._pydantic_core.ValidationError as e:
         raise HTTPException(status_code=400, detail=e.errors())
     except Exception as e:
+        print(e)
         if hasattr(e, "code") and isinstance(e.code, int):
             raise HTTPException(status_code=e.code, detail=str(e))
         raise HTTPException(status_code=500, detail="Internal Server Error")
-
 
 @router.get("/")
 async def read_cases(
@@ -75,9 +87,12 @@ async def update_case(
     file: List[UploadFile] | None = File(None),
     session: AsyncSession = Depends(database_helper.session_depends),
     service: CaseUpdateService = Depends(get_update_create_service),
+    current_user=Depends(get_user_current_service),
 ) -> CaseRead:
     """Case - string format: {"title":"string","description":"string","price":float}"""
     try:
+        await check_rules_user(current_user, session)
+
         case = CaseUpdate.model_validate_json(case)
         case_collection = case.model_dump()
         case_collection["images"] = file if file else []
@@ -96,8 +111,11 @@ async def delete_case(
     id: str,
     session: AsyncSession = Depends(database_helper.session_depends),
     repo: CaseRepository = Depends(get_case_repository),
+    current_user=Depends(get_user_current_service),
 ):
     try:
+        await check_rules_user(current_user, session)
+
         return await repo.delete(session, id)
     except HTTPException as e:
         raise e

@@ -11,7 +11,7 @@ class CaseBase(BaseModel):
 
 class CaseRead(CaseBase):
     id: uuid.UUID
-    images: List[str]
+    images: List[str] | None = []
 
 class CaseCreate(CaseBase):
     ...
