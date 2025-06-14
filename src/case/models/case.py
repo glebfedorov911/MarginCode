@@ -4,6 +4,7 @@ from src.config.core.base import Base
 from typing import List
 
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import JSON
 
 
 
@@ -12,5 +13,5 @@ class Case(Base, DateTimeMixin):
 
     title: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
-    images: Mapped[List[str]] = mapped_column(nullable=False)
+    images: Mapped[List[str]] = mapped_column(JSON, nullable=False)
     price: Mapped[float] = mapped_column(nullable=False)
