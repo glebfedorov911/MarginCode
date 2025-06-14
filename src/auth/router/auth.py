@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+import pydantic_core
 
 from src.config.core.settings import settings
 from src.config.core.db_helper import database_helper
@@ -25,11 +26,13 @@ async def create_user(
             return await service.create_user(session, **user_create.model_dump())
         except HTTPException as e:
             raise e
+        except pydantic_core._pydantic_core.ValidationError as e:
+            raise HTTPException(status_code=400, detail=e.errors())
         except Exception as e:
-            if hasattr(e, "code"):
-                print(e.code)
+            if hasattr(e, "code") and isinstance(e.code, int):
                 raise HTTPException(status_code=e.code, detail=str(e))
-            raise HTTPException(status_code=400, detail="Bad request")
+            raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 @router.post("/login-user")
 async def login(
@@ -42,10 +45,13 @@ async def login(
         return await service.auth_user(session, **user_auth.model_dump())
     except HTTPException as e:
         raise e
+    except pydantic_core._pydantic_core.ValidationError as e:
+        raise HTTPException(status_code=400, detail=e.errors())
     except Exception as e:
-        if hasattr(e, "code"):
+        if hasattr(e, "code") and isinstance(e.code, int):
             raise HTTPException(status_code=e.code, detail=str(e))
-        raise HTTPException(status_code=400, detail="Bad request")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 @router.get("/current-user")
 async def current_user(
@@ -57,7 +63,9 @@ async def current_user(
         return await service.current_user(session)
     except HTTPException as e:
         raise e
+    except pydantic_core._pydantic_core.ValidationError as e:
+        raise HTTPException(status_code=400, detail=e.errors())
     except Exception as e:
         if hasattr(e, "code") and isinstance(e.code, int):
             raise HTTPException(status_code=e.code, detail=str(e))
-        raise HTTPException(status_code=400, detail="Bad request")
+        raise HTTPException(status_code=500, detail="Internal Server Error")

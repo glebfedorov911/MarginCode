@@ -1,8 +1,6 @@
 from src.config.core.base import Base
 from src.common.mixin.models_mixin import DateTimeMixin
 
-from datetime import datetime
-
 from sqlalchemy.orm import Mapped, mapped_column
 
 

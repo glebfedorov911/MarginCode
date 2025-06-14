@@ -18,6 +18,7 @@ services:
       - PASSWORD_TO_CREATE_USER=${PASSWORD_TO_CREATE_USER}
     volumes:
       - .:/app
+      - uploads_data:/app/src/uploads
 
   db:
     image: postgres:latest
@@ -45,3 +46,4 @@ networks:
 
 volumes:
   pg_data:
+  uploads_data:

@@ -5,7 +5,7 @@ import uuid
 from src.common.exceptions.db_exceptions import NotFoundException, DataBaseExceptionMessages
 
 from sqlalchemy.ext.asyncio import  AsyncSession
-from sqlalchemy import select, Result, Select
+from sqlalchemy import select, Result, Select, func
 
 
 ModelType = TypeVar('ModelType')
@@ -41,8 +41,10 @@ class BaseRepository(Generic[ModelType, SessionType], ABC):
         :return: count records and sequence of records
         """
         stmt = select(self.model).offset(offset).limit(limit)
+        stmt_count = select(func.count()).select_from(self.model)
         records = await self._get_result(session, stmt)
-        return len(records), records
+        result_count = await session.execute(stmt_count)
+        return result_count.scalar_one(), records
 
     async def add(self, session: AsyncSession, data_add: Dict) -> ModelType:
         """
@@ -64,7 +66,7 @@ class BaseRepository(Generic[ModelType, SessionType], ABC):
         :param data_update: dictionary with data for update in model
         :return: updated data
         """
-        instance = self.get_by_id(session, id_)
+        instance = await self.get_by_id(session, id_)
         instance = self._update_data_in_instance(instance, data_update)
         await self._commit_and_refresh_base(session, instance)
         return instance
@@ -76,7 +78,7 @@ class BaseRepository(Generic[ModelType, SessionType], ABC):
         :param id_: the id value that is being searched for
         :return: None
         """
-        instance = self.get_by_id(session, id_)
+        instance = await self.get_by_id(session, id_)
         await session.delete(instance)
         await self._commit_and_refresh_base(session)
 
